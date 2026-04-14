@@ -1,14 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, 
-  collection, 
   doc, 
   getDoc, 
   setDoc, 
-  updateDoc,
-  query,
-  where,
-  getDocs
+  updateDoc
 } from 'firebase/firestore';
 import firebaseConfig from './firebase.config';
 
@@ -43,18 +39,16 @@ export const registerUser = async (fullName) => {
       createdAt: new Date().toISOString()
     };
 
-    // Check if user already exists
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('generatedID', '==', generatedID));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
+    // Check if user already exists by trying to get the doc
+    const userDoc = doc(db, 'users', generatedID);
+    const docSnap = await getDoc(userDoc);
+    
+    if (docSnap.exists()) {
       // Regenerate ID if collision
       return registerUser(fullName);
     }
 
     // Create new user document
-    const userDoc = doc(db, 'users', generatedID);
     await setDoc(userDoc, userData);
 
     return { ...userData, success: true };
