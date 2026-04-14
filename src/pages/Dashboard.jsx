@@ -7,6 +7,18 @@ import Navbar from '../components/layout/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { updateUserSocialLinks, updateUserProfile, normalizeUrl } from '../services/firestore';
 
+// Quick link templates
+const QUICK_LINKS = [
+  { name: 'Facebook', placeholder: 'https://www.facebook.com/yourname' },
+  { name: 'Messenger', placeholder: 'https://m.me/yourname' },
+  { name: 'TikTok', placeholder: 'https://www.tiktok.com/@yourname' },
+  { name: 'Telegram', placeholder: 'https://t.me/yourname' },
+  { name: 'YouTube', placeholder: 'https://www.youtube.com/@yourchannel' },
+  { name: 'GitHub', placeholder: 'https://github.com/yourname' },
+  { name: 'LinkedIn', placeholder: 'https://www.linkedin.com/in/yourname' },
+  { name: 'WhatsApp', placeholder: 'https://wa.me/959xxxxxxxxx' },
+];
+
 /**
  * Dashboard Page - Link Management
  * Users can add/edit up to 10 social links
@@ -74,6 +86,14 @@ const Dashboard = () => {
     setSaved(false);
   };
 
+  const addQuickLink = (index, platform) => {
+    const platformData = QUICK_LINKS[platform];
+    const newLinks = [...socialLinks];
+    newLinks[index] = { name: platformData.name, url: platformData.placeholder };
+    setSocialLinks(newLinks);
+    setSaved(false);
+  };
+
   if (!user) {
     return null;
   }
@@ -122,24 +142,41 @@ const Dashboard = () => {
           <h2 className="text-lg font-semibold text-white mb-4">Your Social Links (max 10)</h2>
           <p className="text-white/50 text-sm mb-4">Auto-adds https:// if missing</p>
 
-          <div className="space-y-4 mb-6">
+          <div className="space-y-3 mb-6">
             {socialLinks.map((link, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <span className="text-white/30 text-sm w-6">{index + 1}.</span>
-                <Input
-                  type="text"
-                  placeholder="Name (e.g., Facebook)"
-                  value={link.name}
-                  onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
-                  className="flex-1"
-                />
-                <Input
-                  type="url"
-                  placeholder="URL (e.g., facebook.com/yourpage)"
-                  value={link.url}
-                  onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                  className="flex-1"
-                />
+              <div key={index} className="space-y-2">
+                {/* Quick Links */}
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_LINKS.map((platform, pIndex) => (
+                    <button
+                      key={pIndex}
+                      type="button"
+                      onClick={() => addQuickLink(index, pIndex)}
+                      className="text-xs px-2 py-1 rounded bg-white/5 text-white/60 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
+                    >
+                      + {platform.name}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Link Inputs */}
+                <div className="flex gap-2 items-center">
+                  <span className="text-white/30 text-sm w-6">{index + 1}.</span>
+                  <Input
+                    type="text"
+                    placeholder="Name (e.g., Facebook)"
+                    value={link.name}
+                    onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="url"
+                    placeholder="URL (e.g., https://facebook.com/yourname)"
+                    value={link.url}
+                    onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
               </div>
             ))}
           </div>
