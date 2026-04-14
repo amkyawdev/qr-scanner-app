@@ -139,7 +139,8 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="pl-12"
+                showToggle
+                className="pr-12"
               />
             </div>
 
@@ -150,7 +151,8 @@ const Register = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
-                className="pl-12"
+                showToggle
+                className="pr-12"
               />
             </div>
 
