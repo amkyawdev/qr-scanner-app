@@ -80,10 +80,9 @@ const Navbar = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
             className="md:hidden absolute top-full left-0 right-0 mt-2 p-4"
           >
-            <div className="glass-card rounded-xl overflow-hidden">
+            <div className="glass-card rounded-xl overflow-hidden bg-black/90">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (

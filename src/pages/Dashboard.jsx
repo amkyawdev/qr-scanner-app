@@ -140,44 +140,45 @@ const Dashboard = () => {
           <hr className="border-white/10 my-6" />
 
           <h2 className="text-lg font-semibold text-white mb-4">Your Social Links (max 10)</h2>
-          <p className="text-white/50 text-sm mb-4">Auto-adds https:// if missing</p>
 
           <div className="space-y-3 mb-6">
             {socialLinks.map((link, index) => (
-              <div key={index} className="space-y-2">
-                {/* Quick Links */}
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_LINKS.map((platform, pIndex) => (
-                    <button
-                      key={pIndex}
-                      type="button"
-                      onClick={() => addQuickLink(index, pIndex)}
-                      className="text-xs px-2 py-1 rounded bg-white/5 text-white/60 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
-                    >
-                      + {platform.name}
-                    </button>
-                  ))}
-                </div>
-                
-                {/* Link Inputs */}
-                <div className="flex gap-2 items-center">
-                  <span className="text-white/30 text-sm w-6">{index + 1}.</span>
-                  <Input
-                    type="text"
-                    placeholder="Name (e.g., Facebook)"
-                    value={link.name}
-                    onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="url"
-                    placeholder="URL (e.g., https://facebook.com/yourname)"
-                    value={link.url}
-                    onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                    className="flex-1"
-                  />
-                </div>
+              <div key={index} className="flex gap-2 items-center">
+                <span className="text-white/30 text-sm w-6">{index + 1}.</span>
+                <Input
+                  type="text"
+                  placeholder="Platform Name"
+                  value={link.name}
+                  onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  type="url"
+                  placeholder="URL"
+                  value={link.url}
+                  onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                  className="flex-1"
+                />
               </div>
+            ))}
+          </div>
+
+          {/* Quick Add Buttons */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {QUICK_LINKS.map((platform, pIndex) => (
+              <button
+                key={pIndex}
+                type="button"
+                onClick={() => {
+                  const emptyIndex = socialLinks.findIndex(link => !link.name && !link.url);
+                  if (emptyIndex !== -1) {
+                    addQuickLink(emptyIndex, pIndex);
+                  }
+                }}
+                className="text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
+              >
+                + {platform.name}
+              </button>
             ))}
           </div>
 
