@@ -14,60 +14,65 @@ const Index = () => {
   const [profileUrl, setProfileUrl] = useState('');
 
   useEffect(() => {
-    // Generate profile URL based on generatedID
     if (user?.generatedID) {
       const baseUrl = window.location.origin;
       setProfileUrl(`${baseUrl}/profile/${user.generatedID}`);
     }
   }, [user]);
 
+  const socialLinks = user?.socialLinks?.filter(link => link.name && link.url) || [];
+
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen pt-20 pb-8 px-4 flex items-center justify-center bg-black">
+        <Navbar />
+        <p className="text-white/50">Please login first</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4">
+    <div className="min-h-screen pt-20 pb-8 px-4 bg-black">
       <Navbar />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-md mx-auto flex items-center justify-center min-h-[calc(100vh-160px)]"
+        className="max-w-md mx-auto space-y-4"
       >
-        <Card neon>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              {user.fullName || 'User'}
-            </h1>
-            <p className="text-[#00ffaa] font-mono text-lg mb-6 neon-text">
-              {user.generatedID}
-            </p>
-            
-            <div className="flex justify-center mb-6">
-              <QRGenerator value={profileUrl || user.generatedID} size={200} />
-            </div>
-            
-            <p className="text-white/50 text-sm">
-              Scan this QR to view my profile
-            </p>
+        {/* QR Card - Centered */}
+        <Card neon className="text-center py-8">
+          <h1 className="text-2xl font-bold text-white mb-1">
+            {user.fullName || 'User'}
+          </h1>
+          <p className="text-[#00ffaa] font-mono text-lg mb-6 neon-text">
+            {user.generatedID}
+          </p>
+          
+          <div className="flex justify-center mb-4">
+            <QRGenerator value={profileUrl || user.generatedID} size={180} />
           </div>
+          
+          <p className="text-white/50 text-sm">
+            Scan to view my profile
+          </p>
         </Card>
 
-        {/* User Social Links Preview */}
-        {user.socialLinks && user.socialLinks.some(link => link.url) && (
-          <Card className="mt-4">
-            <h2 className="text-lg font-semibold text-white mb-4">Your Links</h2>
+        {/* Social Links Preview */}
+        {socialLinks.length > 0 && (
+          <Card>
+            <h2 className="text-lg font-semibold text-white mb-4">My Links ({socialLinks.length})</h2>
             <div className="space-y-2">
-              {user.socialLinks.filter(link => link.url).slice(0, 5).map((link, index) => (
+              {socialLinks.map((link, index) => (
                 <a
                   key={index}
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-[#00aaff]"
+                  className="block p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-[#00ffaa] text-center font-medium"
                 >
-                  {link.name || link.url}
+                  {link.name}
                 </a>
               ))}
             </div>
