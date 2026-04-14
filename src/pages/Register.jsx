@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock, User } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -8,14 +9,15 @@ import { registerUser } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Register Page - User registration with auto ID generation
+ * Register Page - User registration with email/password
  */
 const Register = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [generatedID, setGeneratedID] = useState(null);
-  const [showWarning, setShowWarning] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -24,32 +26,29 @@ const Register = () => {
     e.preventDefault();
     setError('');
     
-    if (!fullName.trim()) {
-      setError('Please enter your full name');
+    // Validation
+    if (!email.trim() || !password || !fullName.trim()) {
+      setError('Please fill in all fields');
       return;
     }
 
-    if (fullName.trim().length < 3) {
-      setError('Name must be at least 3 characters');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
-    setShowWarning(true);
-
-    // Show warning for 2 seconds before proceeding
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    const result = await registerUser(fullName.trim());
+    const result = await registerUser(email.trim(), password, fullName.trim());
     
     if (result.success) {
-      setGeneratedID(result.generatedID);
       login(result);
-      
-      // Redirect to index after showing generated ID
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
+      navigate('/');
     } else {
       setError(result.error || 'Registration failed');
     }
@@ -70,77 +69,81 @@ const Register = () => {
             SmartQR
           </h1>
           <p className="text-white/50 text-center mb-8">
-            Create your QR profile
+            Create your account
           </p>
 
-          {!generatedID ? (
-            <form onSubmit={handleRegister}>
-              <div className="mb-6">
-                <Input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  disabled={loading}
-                  className="text-lg"
-                />
-              </div>
-
-              {error && (
-                <p className="text-red-400 text-sm mb-4 text-center">{error}</p>
-              )}
-
-              <Button
-                type="submit"
+          <form onSubmit={handleRegister}>
+            <div className="mb-4 relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              <Input
+                type="text"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 disabled={loading}
-                className="w-full"
-              >
-                {loading ? 'Creating...' : 'Get Your ID'}
-              </Button>
+                className="pl-10"
+              />
+            </div>
 
-              <p className="text-white/50 text-sm text-center mt-6">
-                Already have an ID?{' '}
-                <span
-                  onClick={() => navigate('/login')}
-                  className="text-[#00ffaa] cursor-pointer hover:underline"
-                >
-                  Login here
-                </span>
-              </p>
-            </form>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center"
+            <div className="mb-4 relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              <Input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="mb-4 relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="mb-6 relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              <Input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading}
+                className="pl-10"
+              />
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-sm mb-4 text-center">{error}</p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full"
             >
-              <div className="mb-4 p-4 bg-[#00ffaa]/10 rounded-lg border border-[#00ffaa]/30">
-                <p className="text-white/70 text-sm mb-2">Your unique ID:</p>
-                <p className="text-2xl font-mono text-[#00ffaa] neon-text">
-                  {generatedID}
-                </p>
-              </div>
-              <p className="text-white/50 text-sm mb-4">
-                Redirecting to your QR page...
-              </p>
-            </motion.div>
-          )}
-        </Card>
+              {loading ? 'Creating Account...' : 'Register'}
+            </Button>
 
-        {/* Warning Message */}
-        {showWarning && !generatedID && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl"
-          >
-            <p className="text-yellow-400 text-center text-sm">
-              ⚠️ မည်သူမျှ မပြပါနှင့်<br/>
-              Your ID is generated - remember it!
+            <p className="text-white/50 text-sm text-center mt-6">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-[#00ffaa] cursor-pointer hover:underline"
+              >
+                Login here
+              </Link>
             </p>
-          </motion.div>
-        )}
+          </form>
+        </Card>
       </motion.div>
     </div>
   );

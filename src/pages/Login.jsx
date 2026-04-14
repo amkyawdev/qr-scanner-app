@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -8,11 +9,11 @@ import { loginUser } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Login Page - User login with fullName and generatedID
+ * Login Page - User login with email and password
  */
 const Login = () => {
-  const [fullName, setFullName] = useState('');
-  const [generatedID, setGeneratedID] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -23,14 +24,14 @@ const Login = () => {
     e.preventDefault();
     setError('');
     
-    if (!fullName.trim() || !generatedID.trim()) {
+    if (!email.trim() || !password) {
       setError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
     
-    const result = await loginUser(fullName.trim(), generatedID.trim());
+    const result = await loginUser(email.trim(), password);
     
     if (result.success) {
       login(result);
@@ -59,25 +60,27 @@ const Login = () => {
           </p>
 
           <form onSubmit={handleLogin}>
-            <div className="mb-4">
+            <div className="mb-4 relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
               <Input
-                type="text"
-                placeholder="Full Name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="text-lg"
+                className="pl-10"
               />
             </div>
 
-            <div className="mb-6">
+            <div className="mb-6 relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
               <Input
-                type="text"
-                placeholder="Your ID (e.g., aug123@gg)"
-                value={generatedID}
-                onChange={(e) => setGeneratedID(e.target.value)}
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="text-lg"
+                className="pl-10"
               />
             </div>
 
@@ -93,14 +96,23 @@ const Login = () => {
               {loading ? 'Logging in...' : 'Login'}
             </Button>
 
+            <div className="text-center mt-4">
+              <Link
+                to="/forgot-password"
+                className="text-white/50 text-sm hover:text-[#00ffaa] transition-colors"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
             <p className="text-white/50 text-sm text-center mt-6">
-              Don't have an ID?{' '}
-              <span
-                onClick={() => navigate('/register')}
+              Don't have an account?{' '}
+              <Link
+                to="/register"
                 className="text-[#00ffaa] cursor-pointer hover:underline"
               >
                 Register here
-              </span>
+              </Link>
             </p>
           </form>
         </Card>

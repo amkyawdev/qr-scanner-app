@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 // Pages
 import Register from './pages/Register';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import Docs from './pages/Docs';
@@ -99,6 +100,16 @@ const AnimatedRoutes = () => {
             <PublicRoute>
               <PageTransition>
                 <Login />
+              </PageTransition>
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <PageTransition>
+                <ForgotPassword />
               </PageTransition>
             </PublicRoute>
           }

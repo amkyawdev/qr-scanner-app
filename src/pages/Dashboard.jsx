@@ -5,7 +5,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Navbar from '../components/layout/Navbar';
 import { useAuth } from '../context/AuthContext';
-import { updateUserLinks } from '../services/firestore';
+import { updateUserLinks, updateUserProfile } from '../services/firestore';
 
 /**
  * Dashboard Page - Link Management
@@ -14,13 +14,17 @@ import { updateUserLinks } from '../services/firestore';
 const Dashboard = () => {
   const { user, updateUser } = useAuth();
   const [links, setLinks] = useState(Array(10).fill({ name: '', url: '' }));
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Initialize links from user data
+  // Initialize data from user
   useEffect(() => {
     if (user?.links) {
       setLinks([...user.links]);
+    }
+    if (user?.fullName) {
+      setFullName(user.fullName);
     }
   }, [user]);
 
@@ -31,15 +35,29 @@ const Dashboard = () => {
     setSaved(false);
   };
 
-  const handleSave = async () => {
+  const handleSaveLinks = async () => {
     setLoading(true);
     
-    const result = await updateUserLinks(user.generatedID, links);
+    const result = await updateUserLinks(user.uid, links);
     
     if (result.success) {
       updateUser({ links });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleSaveName = async () => {
+    if (!fullName.trim()) return;
+    
+    setLoading(true);
+    
+    const result = await updateUserProfile(user.uid, { fullName: fullName.trim() });
+    
+    if (result.success) {
+      updateUser({ fullName: fullName.trim() });
     }
     
     setLoading(false);
@@ -69,8 +87,33 @@ const Dashboard = () => {
             Dashboard
           </h1>
           <p className="text-white/50 mb-6">
-            Manage your profile links (max 10)
+            Manage your profile
           </p>
+
+          {/* Profile Name */}
+          <div className="mb-6">
+            <label className="text-white/70 text-sm mb-2 block">Display Name</label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Your Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSaveName}
+                variant="secondary"
+                disabled={loading}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+
+          <hr className="border-white/10 my-6" />
+
+          <h2 className="text-lg font-semibold text-white mb-4">Your Links (max 10)</h2>
 
           <div className="space-y-4 mb-6">
             {links.map((link, index) => (
@@ -96,7 +139,7 @@ const Dashboard = () => {
 
           <div className="flex gap-4">
             <Button
-              onClick={handleSave}
+              onClick={handleSaveLinks}
               disabled={loading}
               className="flex-1"
             >
@@ -114,12 +157,12 @@ const Dashboard = () => {
 
         {/* User Info Card */}
         <Card className="mt-4">
-          <h2 className="text-lg font-semibold text-white mb-2">Your Info</h2>
+          <h2 className="text-lg font-semibold text-white mb-2">Account Info</h2>
           <p className="text-white/70">
-            <span className="text-white/50">Name:</span> {user.fullName}
+            <span className="text-white/50">Email:</span> {user.email}
           </p>
-          <p className="text-[#00ffaa] font-mono">
-            <span className="text-white/50">ID:</span> {user.generatedID}
+          <p className="text-white/50 text-sm mt-2">
+            UID: {user.uid}
           </p>
         </Card>
       </motion.div>

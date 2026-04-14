@@ -1,5 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import { 
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut,
+  updateProfile
+} from 'firebase/auth';
+import { 
   getFirestore, 
   doc, 
   getDoc, 
@@ -10,45 +18,32 @@ import firebaseConfig from './firebase.config';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 /**
- * Generate a unique user ID based on name and random digits
- * Format: Name Prefix + 3 Random Digits + @gg
- * @param {string} name - User's full name
- * @returns {string} Generated unique ID
+ * Register a new user with email/password
+ * Also creates a user profile in Firestore
  */
-export const generateUserId = (name) => {
-  const prefix = name.slice(0, 3).toLowerCase().replace(/[^a-z]/g, 'xyz');
-  const randomDigits = Math.floor(100 + Math.random() * 900).toString();
-  return `${prefix}${randomDigits}@gg`;
-};
-
-/**
- * Register a new user
- * @param {string} fullName - User's full name
- * @returns {object} User data including generated ID
- */
-export const registerUser = async (fullName) => {
+export const registerUser = async (email, password, fullName) => {
   try {
-    const generatedID = generateUserId(fullName);
+    // Create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Update display name
+    await updateProfile(user, { displayName: fullName });
+
+    // Create user profile in Firestore
     const userData = {
+      uid: user.uid,
+      email,
       fullName,
-      generatedID,
       links: Array(10).fill({ name: '', url: '' }),
       createdAt: new Date().toISOString()
     };
 
-    // Check if user already exists by trying to get the doc
-    const userDoc = doc(db, 'users', generatedID);
-    const docSnap = await getDoc(userDoc);
-    
-    if (docSnap.exists()) {
-      // Regenerate ID if collision
-      return registerUser(fullName);
-    }
-
-    // Create new user document
+    const userDoc = doc(db, 'users', user.uid);
     await setDoc(userDoc, userData);
 
     return { ...userData, success: true };
@@ -59,24 +54,32 @@ export const registerUser = async (fullName) => {
 };
 
 /**
- * Login user with fullName and generatedID
- * @param {string} fullName - User's full name
- * @param {string} generatedID - User's generated ID
- * @returns {object} User data if found, null otherwise
+ * Login user with email and password
  */
-export const loginUser = async (fullName, generatedID) => {
+export const loginUser = async (email, password) => {
   try {
-    const userDoc = doc(db, 'users', generatedID);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Get user profile from Firestore
+    const userDoc = doc(db, 'users', user.uid);
     const docSnap = await getDoc(userDoc);
 
     if (docSnap.exists()) {
-      const userData = docSnap.data();
-      if (userData.fullName.toLowerCase() === fullName.toLowerCase()) {
-        return { ...userData, success: true };
-      }
+      return { ...docSnap.data(), success: true };
     }
-    
-    return { success: false, error: 'Invalid credentials' };
+
+    // If no profile exists, create basic profile
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      fullName: user.displayName || 'User',
+      links: Array(10).fill({ name: '', url: '' }),
+      createdAt: new Date().toISOString()
+    };
+
+    await setDoc(userDoc, userData);
+    return { ...userData, success: true };
   } catch (error) {
     console.error('Error logging in:', error);
     return { success: false, error: error.message };
@@ -84,14 +87,69 @@ export const loginUser = async (fullName, generatedID) => {
 };
 
 /**
- * Update user links
- * @param {string} generatedID - User's generated ID
- * @param {array} links - Array of 10 link objects
- * @returns {object} Success status
+ * Send password reset email
  */
-export const updateUserLinks = async (generatedID, links) => {
+export const resetPassword = async (email) => {
   try {
-    const userDoc = doc(db, 'users', generatedID);
+    await sendPasswordResetEmail(auth, email);
+    return { success: true };
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Logout user
+ */
+export const logoutUser = async () => {
+  try {
+    await signOut(auth);
+    return { success: true };
+  } catch (error) {
+    console.error('Error logging out:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Update user profile
+ */
+export const updateUserProfile = async (uid, data) => {
+  try {
+    const userDoc = doc(db, 'users', uid);
+    await updateDoc(userDoc, { ...data, updatedAt: new Date().toISOString() });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get user profile by UID
+ */
+export const getUserProfile = async (uid) => {
+  try {
+    const userDoc = doc(db, 'users', uid);
+    const docSnap = await getDoc(userDoc);
+
+    if (docSnap.exists()) {
+      return { ...docSnap.data(), success: true };
+    }
+    return { success: false, error: 'User not found' };
+  } catch (error) {
+    console.error('Error getting profile:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Update user links
+ */
+export const updateUserLinks = async (uid, links) => {
+  try {
+    const userDoc = doc(db, 'users', uid);
     await updateDoc(userDoc, { links, updatedAt: new Date().toISOString() });
     return { success: true };
   } catch (error) {
@@ -102,18 +160,15 @@ export const updateUserLinks = async (generatedID, links) => {
 
 /**
  * Get user data by ID (for QR profile view)
- * @param {string} generatedID - User's generated ID
- * @returns {object} User data if found
  */
-export const getUserData = async (generatedID) => {
+export const getUserData = async (userId) => {
   try {
-    const userDoc = doc(db, 'users', generatedID);
+    const userDoc = doc(db, 'users', userId);
     const docSnap = await getDoc(userDoc);
 
     if (docSnap.exists()) {
       return { ...docSnap.data(), success: true };
     }
-    
     return { success: false, error: 'User not found' };
   } catch (error) {
     console.error('Error getting user data:', error);
@@ -121,21 +176,5 @@ export const getUserData = async (generatedID) => {
   }
 };
 
-/**
- * Check if user exists by ID
- * @param {string} generatedID - User's generated ID
- * @returns {boolean} True if user exists
- */
-export const checkUserExists = async (generatedID) => {
-  try {
-    const userDoc = doc(db, 'users', generatedID);
-    const docSnap = await getDoc(userDoc);
-    return docSnap.exists();
-  } catch (error) {
-    console.error('Error checking user:', error);
-    return false;
-  }
-};
-
-export { db };
+export { auth, db };
 export default app;

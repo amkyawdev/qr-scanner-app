@@ -14,11 +14,10 @@ const Index = () => {
   const [profileUrl, setProfileUrl] = useState('');
 
   useEffect(() => {
-    // Generate profile URL based on user ID
-    if (user?.generatedID) {
-      // This would be the URL where users can view the public profile
+    // Generate profile URL based on user UID
+    if (user?.uid) {
       const baseUrl = window.location.origin;
-      setProfileUrl(`${baseUrl}/profile/${user.generatedID}`);
+      setProfileUrl(`${baseUrl}/profile/${user.uid}`);
     }
   }, [user]);
 
@@ -39,14 +38,14 @@ const Index = () => {
         <Card neon>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white mb-2">
-              {user.fullName}
+              {user.fullName || 'User'}
             </h1>
             <p className="text-[#00ffaa] font-mono text-lg mb-6 neon-text">
-              {user.generatedID}
+              {user.email}
             </p>
             
             <div className="flex justify-center mb-6">
-              <QRGenerator value={profileUrl || user.generatedID} size={200} />
+              <QRGenerator value={profileUrl || user.uid} size={200} />
             </div>
             
             <p className="text-white/50 text-sm">

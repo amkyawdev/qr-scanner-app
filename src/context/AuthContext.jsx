@@ -1,51 +1,54 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../services/firestore';
+import { getUserProfile } from '../services/firestore';
 
 const AuthContext = createContext(null);
 
 /**
- * AuthContext for managing user authentication state
- * Persists session in localStorage
+ * AuthContext for managing Firebase authentication state
  */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check localStorage on mount
+  // Listen to Firebase Auth state changes
   useEffect(() => {
-    const storedUser = localStorage.getItem('smartQRUser');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('smartQRUser');
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Get user profile from Firestore
+        const profile = await getUserProfile(firebaseUser.uid);
+        if (profile.success) {
+          setUser({ ...firebaseUser, ...profile });
+        } else {
+          // If no profile, use basic Firebase user info
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            fullName: firebaseUser.displayName || 'User'
+          });
+        }
+      } else {
+        setUser(null);
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Save user to localStorage when changed
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('smartQRUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('smartQRUser');
-    }
-  }, [user]);
-
   /**
-   * Login user and persist session
-   * @param {object} userData - User data from login/register
+   * Login user (handled by firestore.js)
    */
   const login = (userData) => {
     setUser(userData);
   };
 
   /**
-   * Logout user and clear session
+   * Logout user (handled by firestore.js)
    */
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('smartQRUser');
   };
 
   /**
@@ -53,8 +56,7 @@ export const AuthProvider = ({ children }) => {
    * @param {object} newData - New user data to merge
    */
   const updateUser = (newData) => {
-    const updatedUser = { ...user, ...newData };
-    setUser(updatedUser);
+    setUser(prev => ({ ...prev, ...newData }));
   };
 
   /**
@@ -62,7 +64,7 @@ export const AuthProvider = ({ children }) => {
    * @returns {boolean} Authentication status
    */
   const isAuthenticated = () => {
-    return !!user && !!user.generatedID;
+    return !!user && !!user.uid;
   };
 
   return (
