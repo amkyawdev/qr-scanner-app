@@ -5,71 +5,21 @@ import {
   Globe, ArrowUpRight, Send, MessageCircle, MessageSquare, 
   Mail, Phone, MapPin, Link as LinkIcon, ExternalLink, User, Video
 } from 'lucide-react';
-import Card from '../components/common/Card';
 import QRGenerator from '../components/qr/QRGenerator';
 import { getUserDataByGeneratedID } from '../services/firestore';
 
-/**
- * Detect platform from URL and return icon component
- * Uses only universally available lucide-react icons
- */
-const getPlatformIcon = (url) => {
-  if (!url) return LinkIcon;
-  
-  const lowerUrl = url.toLowerCase();
-  
-  // Social media - use Globe for most
-  if (lowerUrl.includes('facebook') || lowerUrl.includes('fb.com') || 
-      lowerUrl.includes('instagram') || lowerUrl.includes('ig.me') ||
-      lowerUrl.includes('tiktok') || lowerUrl.includes('linkedin')) {
-    return Globe;
-  }
-  
-  // Twitter/X
-  if (lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) {
-    return ArrowUpRight;
-  }
-  
-  // YouTube/Video
-  if (lowerUrl.includes('youtube') || lowerUrl.includes('youtu.be')) {
-    return Video;
-  }
-  
-  // GitHub
-  if (lowerUrl.includes('github')) {
-    return Globe;
-  }
-  
-  // Telegram
-  if (lowerUrl.includes('telegram') || lowerUrl.includes('t.me')) {
-    return Send;
-  }
-  
-  // WhatsApp
-  if (lowerUrl.includes('whatsapp') || lowerUrl.includes('wa.me')) {
-    return MessageCircle;
-  }
-  
-  // Discord
-  if (lowerUrl.includes('discord')) {
-    return MessageSquare;
-  }
-  
-  // Email
-  if (lowerUrl.includes('email') || lowerUrl.includes('gmail') || lowerUrl.includes('mail.google')) {
-    return Mail;
-  }
-  
-  // Phone
-  if (lowerUrl.includes('phone') || lowerUrl.includes('call')) {
-    return Phone;
-  }
-  
-  // Location
-  if (lowerUrl.includes('location') || lowerUrl.includes('maps')) {
-    return MapPin;
-  }
-  
+// Icon mapping for social platforms
+const getPlatformIcon = (name) => {
+  const lowerName = (name || '').toLowerCase();
+  if (lowerName.includes('facebook') || lowerName.includes('fb')) return User;
+  if (lowerName.includes('messenger') || lowerName.includes('m.me')) return MessageCircle;
+  if (lowerName.includes('tiktok')) return Video;
+  if (lowerName.includes('telegram') || lowerName.includes('t.me')) return Send;
+  if (lowerName.includes('youtube')) return Video;
+  if (lowerName.includes('github')) return Globe;
+  if (lowerName.includes('linkedin')) return Globe;
+  if (lowerName.includes('whatsapp') || lowerName.includes('wa.me')) return Phone;
+  if (lowerName.includes('gmail') || lowerName.includes('email')) return Mail;
   return LinkIcon;
 };
 
@@ -152,26 +102,26 @@ const ProfileView = () => {
           </div>
         </div>
 
-        {/* Social Links */}
+        {/* Social Links - Clickable Buttons */}
         {validLinks.length > 0 ? (
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4">
-            <h2 className="text-white/70 text-sm mb-4 text-center">Links ({validLinks.length})</h2>
-            <div className="space-y-2">
+            <h2 className="text-white/70 text-xs mb-3 text-center">Quick Links</h2>
+            <div className="grid grid-cols-2 gap-2">
               {validLinks.map((link, index) => {
-                const Icon = getPlatformIcon(link.url);
+                const Icon = getPlatformIcon(link.name);
                 return (
                   <a
                     key={index}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-white/10 to-white/5 hover:from-[#00ffaa]/20 hover:to-[#00aaff]/20 transition-all group"
+                    className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-white/10 to-white/5 hover:from-[#00ffaa]/20 hover:to-[#00aaff]/20 transition-all group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#00ffaa]/20 flex items-center justify-center text-[#00ffaa]">
                       <Icon size={16} />
                     </div>
                     <span className="text-white font-medium text-sm flex-1">{link.name}</span>
-                    <ExternalLink size={14} className="text-white/30 group-hover:text-[#00ffaa]" />
+                    <ExternalLink size={12} className="text-white/30" />
                   </a>
                 );
               })}
