@@ -132,7 +132,7 @@ const ProfileView = () => {
               
               <div className="flex justify-center mb-3">
                 <div className="p-3 bg-white rounded-xl">
-                  <QRGenerator value={selectedLink.url} size={140} />
+                  <QRGenerator value={selectedLink.url} size={140} bwMode={true} />
                 </div>
               </div>
               

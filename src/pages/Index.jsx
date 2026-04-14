@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Video, Send, Phone, Mail, Globe, ExternalLink, User } from 'lucide-react';
+import { MessageCircle, Video, Send, Phone, Mail, Globe, ExternalLink, User, Camera, X } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import QRGenerator from '../components/qr/QRGenerator';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,9 @@ const Index = () => {
   const { user } = useAuth();
   const [profileUrl, setProfileUrl] = useState('');
   const [selectedLink, setSelectedLink] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     if (user?.generatedID) {
@@ -35,6 +38,39 @@ const Index = () => {
       setProfileUrl(`${baseUrl}/profile/${user.generatedID}`);
     }
   }, [user]);
+
+  // Clean up scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const startScanner = async () => {
+    setShowScanner(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      setShowScanner(false);
+    }
+  };
+
+  const stopScanner = () => {
+    if (videoRef.current?.srcObject) {
+      const tracks = videoRef.current.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+    }
+    setShowScanner(false);
+  };
 
   const socialLinks = user?.socialLinks?.filter(link => link.name && link.url) || [];
 
@@ -107,7 +143,7 @@ const Index = () => {
               
               <div className="flex justify-center mb-3">
                 <div className="p-3 bg-white rounded-xl">
-                  <QRGenerator value={selectedLink.url} size={140} />
+                  <QRGenerator value={selectedLink.url} size={140} bwMode={true} />
                 </div>
               </div>
               
@@ -149,6 +185,58 @@ const Index = () => {
           )
         )}
       </motion.div>
+
+      {/* QR Scanner Button */}
+      <div className="max-w-sm mx-auto mt-4">
+        <button
+          onClick={startScanner}
+          className="w-full flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-[#00ffaa]/20 to-[#00aaff]/20 rounded-2xl border border-white/10 hover:from-[#00ffaa]/30 hover:to-[#00aaff]/30 transition-all"
+        >
+          <Camera size={24} className="text-[#00ffaa]" />
+          <span className="text-white font-medium">Scan QR Code</span>
+        </button>
+      </div>
+
+      {/* QR Scanner Overlay */}
+      {showScanner && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4">
+            <h2 className="text-white text-lg font-semibold">Scan QR Code</h2>
+            <button
+              onClick={stopScanner}
+              className="p-2 bg-white/10 rounded-full"
+            >
+              <X size={24} className="text-white" />
+            </button>
+          </div>
+
+          {/* Scanner Area */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="relative w-72 h-72">
+              {/* Corner markers */}
+              <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-[#00ffaa] rounded-tl-xl" />
+              <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-[#00ffaa] rounded-tr-xl" />
+              <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-[#00ffaa] rounded-bl-xl" />
+              <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-[#00ffaa] rounded-br-xl" />
+              
+              {/* Video */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover rounded-xl"
+              />
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="p-6 text-center">
+            <p className="text-white/70">Point camera at QR code</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
