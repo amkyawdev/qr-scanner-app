@@ -20,11 +20,11 @@ const QUICK_LINKS = [
   { name: 'WhatsApp', placeholder: 'https://wa.me/959xxxxxxxxx' },
 ];
 
-// Show saved links separately
-const SavedLinks = ({ links, onEdit, onDelete }) => {
+// Show saved links separately - only after saving
+const SavedLinks = ({ links, onEdit, onDelete, visible }) => {
   const savedLinks = links.filter(l => l.name && l.url);
   
-  if (savedLinks.length === 0) {
+  if (!visible || savedLinks.length === 0) {
     return null;
   }
   
@@ -72,12 +72,15 @@ const Dashboard = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [showSavedList, setShowSavedList] = useState(true);
+  const [hasLinks, setHasLinks] = useState(false); // Track if user has saved links
 
   // Initialize data from user
   useEffect(() => {
     if (user?.socialLinks) {
       setSocialLinks([...user.socialLinks]);
+      // Check if user has any saved links
+      const hasAny = user.socialLinks.some(l => l.name && l.url);
+      setHasLinks(hasAny);
     }
     if (user?.fullName) {
       setFullName(user.fullName);
@@ -105,6 +108,9 @@ const Dashboard = () => {
     if (result.success) {
       updateUser({ socialLinks: normalizedLinks });
       setSaved(true);
+      // Check if any links were saved
+      const hasAny = normalizedLinks.some(l => l.name && l.url);
+      setHasLinks(hasAny);
       setTimeout(() => setSaved(false), 2000);
     }
     
@@ -222,24 +228,27 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Quick Add Buttons */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            {QUICK_LINKS.map((platform, pIndex) => (
-              <button
-                key={pIndex}
-                type="button"
-                onClick={() => {
-                  const emptyIndex = socialLinks.findIndex(link => !link.name && !link.url);
-                  if (emptyIndex !== -1) {
-                    addQuickLink(emptyIndex, pIndex);
-                  }
-                }}
-                className="text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
-              >
-                + {platform.name}
-              </button>
-            ))}
-          </div>
+          {/* Quick Add Buttons - only show when no saved links */}
+          {!hasLinks && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <p className="text-white/50 text-sm w-full mb-2">Quick Add:</p>
+              {QUICK_LINKS.map((platform, pIndex) => (
+                <button
+                  key={pIndex}
+                  type="button"
+                  onClick={() => {
+                    const emptyIndex = socialLinks.findIndex(link => !link.name && !link.url);
+                    if (emptyIndex !== -1) {
+                      addQuickLink(emptyIndex, pIndex);
+                    }
+                  }}
+                  className="text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
+                >
+                  + {platform.name}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex gap-4">
             <Button
@@ -258,11 +267,12 @@ const Dashboard = () => {
             </Button>
           </div>
 
-          {/* Saved Links with Edit/Delete Buttons */}
+          {/* Saved Links with Edit/Delete Buttons - only show after saving */}
           <SavedLinks 
             links={socialLinks} 
             onEdit={handleEditLink}
             onDelete={handleDeleteLink}
+            visible={hasLinks}
           />
         </Card>
 
