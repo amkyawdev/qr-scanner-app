@@ -68,49 +68,52 @@ const SavedLinks = ({ links, onEdit, onDelete, visible }) => {
  */
 const Dashboard = () => {
   const { user, updateUser } = useAuth();
-  const [socialLinks, setSocialLinks] = useState(Array(10).fill({ name: '', url: '' }));
+  const [socialLink, setSocialLink] = useState({ name: '', url: '' });
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [hasLinks, setHasLinks] = useState(false); // Track if user has saved links
+  const [hasLinks, setHasLinks] = useState(false);
 
   // Initialize data from user
   useEffect(() => {
-    if (user?.socialLinks) {
-      setSocialLinks([...user.socialLinks]);
-      // Check if user has any saved links
-      const hasAny = user.socialLinks.some(l => l.name && l.url);
-      setHasLinks(hasAny);
+    if (user?.socialLinks && user.socialLinks.length > 0) {
+      // Get first saved link
+      const savedLink = user.socialLinks.find(l => l.name && l.url);
+      if (savedLink) {
+        setSocialLink(savedLink);
+        setHasLinks(true);
+      }
     }
     if (user?.fullName) {
       setFullName(user.fullName);
     }
   }, [user]);
 
-  const handleLinkChange = (index, field, value) => {
-    const newLinks = [...socialLinks];
-    newLinks[index] = { ...newLinks[index], [field]: value };
-    setSocialLinks(newLinks);
+  const handleLinkChange = (field, value) => {
+    setSocialLink({ ...socialLink, [field]: value });
     setSaved(false);
   };
 
   const handleSaveLinks = async () => {
+    if (!socialLink.name || !socialLink.url) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     
-    // Normalize URLs - add https:// if missing
-    const normalizedLinks = socialLinks.map(link => ({
-      ...link,
-      url: normalizeUrl(link.url)
-    }));
+    // Normalize URL - add https:// if missing
+    const normalizedLink = {
+      ...socialLink,
+      url: normalizeUrl(socialLink.url)
+    };
     
-    const result = await updateUserSocialLinks(user.uid, normalizedLinks);
+    const result = await updateUserSocialLinks(user.uid, [normalizedLink]);
     
     if (result.success) {
-      updateUser({ socialLinks: normalizedLinks });
+      updateUser({ socialLinks: [normalizedLink] });
       setSaved(true);
-      // Check if any links were saved
-      const hasAny = normalizedLinks.some(l => l.name && l.url);
-      setHasLinks(hasAny);
+      setHasLinks(true);
       setTimeout(() => setSaved(false), 2000);
     }
     
@@ -132,30 +135,26 @@ const Dashboard = () => {
   };
 
   const handleClear = () => {
-    setSocialLinks(Array(10).fill({ name: '', url: '' }));
+    setSocialLink({ name: '', url: '' });
+    setHasLinks(false);
     setSaved(false);
   };
 
-  const addQuickLink = (index, platform) => {
+  const addQuickLink = (platform) => {
     const platformData = QUICK_LINKS[platform];
-    const newLinks = [...socialLinks];
-    newLinks[index] = { name: platformData.name, url: platformData.placeholder };
-    setSocialLinks(newLinks);
+    setSocialLink({ name: platformData.name, url: platformData.placeholder });
     setSaved(false);
   };
 
   // Edit saved link - load it back to form
-  const handleEditLink = (index) => {
-    const link = socialLinks[index];
-    // Keep the link in place but allow editing
+  const handleEditLink = () => {
     setSaved(false);
   };
 
   // Delete saved link
-  const handleDeleteLink = (index) => {
-    const newLinks = [...socialLinks];
-    newLinks[index] = { name: '', url: '' };
-    setSocialLinks(newLinks);
+  const handleDeleteLink = () => {
+    setSocialLink({ name: '', url: '' });
+    setHasLinks(false);
     setSaved(false);
   };
 
@@ -204,49 +203,66 @@ const Dashboard = () => {
 
           <hr className="border-white/10 my-6" />
 
-          <h2 className="text-lg font-semibold text-white mb-4">Your Social Links (max 10)</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Your Social Link</h2>
 
-          <div className="space-y-3 mb-6">
-            {socialLinks.map((link, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <span className="text-white/30 text-sm w-6">{index + 1}.</span>
+          {/* Show single input when no link saved */}
+          {!hasLinks && (
+            <>
+              <div className="space-y-3 mb-6">
                 <Input
                   type="text"
                   placeholder="Platform Name"
-                  value={link.name}
-                  onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
-                  className="flex-1"
+                  value={socialLink.name}
+                  onChange={(e) => handleLinkChange('name', e.target.value)}
+                  className="w-full"
                 />
                 <Input
                   type="url"
                   placeholder="URL"
-                  value={link.url}
-                  onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                  className="flex-1"
+                  value={socialLink.url}
+                  onChange={(e) => handleLinkChange('url', e.target.value)}
+                  className="w-full"
                 />
               </div>
-            ))}
-          </div>
 
-          {/* Quick Add Buttons - only show when no saved links */}
-          {!hasLinks && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              <p className="text-white/50 text-sm w-full mb-2">Quick Add:</p>
-              {QUICK_LINKS.map((platform, pIndex) => (
+              {/* Quick Add Buttons */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                <p className="text-white/50 text-sm w-full mb-2">Quick Add:</p>
+                {QUICK_LINKS.map((platform, pIndex) => (
+                  <button
+                    key={pIndex}
+                    type="button"
+                    onClick={() => addQuickLink(pIndex)}
+                    className="text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
+                  >
+                    + {platform.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Single Saved Link with Edit/Delete */}
+          {hasLinks && (
+            <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-3 mb-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium">{socialLink.name}</p>
+                <p className="text-white/50 text-xs truncate">{socialLink.url}</p>
+              </div>
+              <div className="flex gap-2 ml-3">
                 <button
-                  key={pIndex}
-                  type="button"
-                  onClick={() => {
-                    const emptyIndex = socialLinks.findIndex(link => !link.name && !link.url);
-                    if (emptyIndex !== -1) {
-                      addQuickLink(emptyIndex, pIndex);
-                    }
-                  }}
-                  className="text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
+                  onClick={handleEditLink}
+                  className="p-2 text-white/50 hover:text-[#00ffaa] transition-colors"
                 >
-                  + {platform.name}
+                  <Edit2 size={18} />
                 </button>
-              ))}
+                <button
+                  onClick={handleDeleteLink}
+                  className="p-2 text-white/50 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
           )}
 
