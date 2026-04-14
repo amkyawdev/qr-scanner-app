@@ -94,31 +94,25 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleLogin}>
-            <div className="mb-4 relative">
-              {isPhone ? (
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
-              ) : (
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
-              )}
+            <div className="mb-4">
               <Input
                 type={isPhone ? "tel" : "email"}
                 placeholder={isPhone ? "Mobile Number" : "Email Address"}
                 value={credential}
                 onChange={(e) => setCredential(e.target.value)}
                 disabled={loading}
-                className="pl-10"
+                className="pl-12"
               />
             </div>
 
-            <div className="mb-6 relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+            <div className="mb-6">
               <Input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="pl-10"
+                className="pl-12"
               />
             </div>
 

@@ -123,19 +123,14 @@ const ForgotPassword = () => {
           </div>
 
           <form onSubmit={handleReset}>
-            <div className="mb-6 relative">
-              {isPhone ? (
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
-              ) : (
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
-              )}
+            <div className="mb-6">
               <Input
                 type={isPhone ? "tel" : "email"}
                 placeholder={isPhone ? "Mobile Number" : "Email Address"}
                 value={credential}
                 onChange={(e) => setCredential(e.target.value)}
                 disabled={loading}
-                className="pl-10"
+                className="pl-12"
               />
             </div>
 
