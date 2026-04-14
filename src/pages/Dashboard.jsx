@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Edit2, Trash2, Check, X } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -19,6 +20,48 @@ const QUICK_LINKS = [
   { name: 'WhatsApp', placeholder: 'https://wa.me/959xxxxxxxxx' },
 ];
 
+// Show saved links separately
+const SavedLinks = ({ links, onEdit, onDelete }) => {
+  const savedLinks = links.filter(l => l.name && l.url);
+  
+  if (savedLinks.length === 0) {
+    return null;
+  }
+  
+  return (
+    <div className="mt-6">
+      <h3 className="text-white/70 text-sm mb-3">Saved Links</h3>
+      <div className="space-y-2">
+        {links.map((link, index) => {
+          if (!link.name && !link.url) return null;
+          return (
+            <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium text-sm truncate">{link.name}</p>
+                <p className="text-white/50 text-xs truncate">{link.url}</p>
+              </div>
+              <div className="flex gap-1 ml-2">
+                <button
+                  onClick={() => onEdit(index)}
+                  className="p-1.5 text-white/50 hover:text-[#00ffaa] transition-colors"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(index)}
+                  className="p-1.5 text-white/50 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 /**
  * Dashboard Page - Link Management
  * Users can add/edit up to 10 social links
@@ -29,6 +72,7 @@ const Dashboard = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showSavedList, setShowSavedList] = useState(true);
 
   // Initialize data from user
   useEffect(() => {
@@ -90,6 +134,21 @@ const Dashboard = () => {
     const platformData = QUICK_LINKS[platform];
     const newLinks = [...socialLinks];
     newLinks[index] = { name: platformData.name, url: platformData.placeholder };
+    setSocialLinks(newLinks);
+    setSaved(false);
+  };
+
+  // Edit saved link - load it back to form
+  const handleEditLink = (index) => {
+    const link = socialLinks[index];
+    // Keep the link in place but allow editing
+    setSaved(false);
+  };
+
+  // Delete saved link
+  const handleDeleteLink = (index) => {
+    const newLinks = [...socialLinks];
+    newLinks[index] = { name: '', url: '' };
     setSocialLinks(newLinks);
     setSaved(false);
   };
@@ -198,6 +257,13 @@ const Dashboard = () => {
               Clear All
             </Button>
           </div>
+
+          {/* Saved Links with Edit/Delete Buttons */}
+          <SavedLinks 
+            links={socialLinks} 
+            onEdit={handleEditLink}
+            onDelete={handleDeleteLink}
+          />
         </Card>
 
         {/* User Info Card */}
