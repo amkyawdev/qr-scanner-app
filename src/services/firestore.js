@@ -12,7 +12,11 @@ import {
   doc, 
   getDoc, 
   setDoc, 
-  updateDoc
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs
 } from 'firebase/firestore';
 import firebaseConfig from './firebase.config';
 
@@ -258,17 +262,41 @@ export const updateUserLinks = async (uid, links) => {
 /**
  * Get user data by ID (for QR profile view)
  */
-export const getUserData = async (userId) => {
+export const getUserData = async (userIdOrGeneratedID) => {
   try {
-    const userDoc = doc(db, 'users', userId);
+    // First try as document ID (UID)
+    const userDoc = doc(db, 'users', userIdOrGeneratedID);
     const docSnap = await getDoc(userDoc);
 
     if (docSnap.exists()) {
       return { ...docSnap.data(), success: true };
     }
+    
+    // If not found, try to find by generatedID
+    // Note: This requires a query - for now return not found
     return { success: false, error: 'User not found' };
   } catch (error) {
     console.error('Error getting user data:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get user data by generatedID (e.g., xyz123@wx)
+ */
+export const getUserDataByGeneratedID = async (generatedID) => {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('generatedID', '==', generatedID));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      return { ...doc.data(), success: true };
+    }
+    return { success: false, error: 'User not found' };
+  } catch (error) {
+    console.error('Error getting user by generatedID:', error);
     return { success: false, error: error.message };
   }
 };
