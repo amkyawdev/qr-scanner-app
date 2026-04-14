@@ -141,28 +141,34 @@ export const registerUser = async (email, password, fullName) => {
 export const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    const firebaseUser = userCredential.user;
 
     // Get user profile from Firestore
-    const userDoc = doc(db, 'users', user.uid);
+    const userDoc = doc(db, 'users', firebaseUser.uid);
     const docSnap = await getDoc(userDoc);
 
+    let userData;
     if (docSnap.exists()) {
-      return { ...docSnap.data(), success: true };
+      userData = { 
+        ...docSnap.data(), 
+        uid: firebaseUser.uid, 
+        email: firebaseUser.email 
+      };
+    } else {
+      // If no profile exists, create basic profile with generatedID
+      const generatedID = generateUserId(firebaseUser.displayName || 'user');
+      userData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        fullName: firebaseUser.displayName || 'User',
+        generatedID,
+        socialLinks: Array(10).fill({ name: '', url: '' }),
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(userDoc, userData);
     }
-
-    // If no profile exists, create basic profile with generatedID
-    const generatedID = generateUserId(user.displayName || 'user');
-    const userData = {
-      uid: user.uid,
-      email: user.email,
-      fullName: user.displayName || 'User',
-      generatedID,
-      socialLinks: Array(10).fill({ name: '', url: '' }),
-      createdAt: new Date().toISOString()
-    };
-
-    await setDoc(userDoc, userData);
+    
     return { ...userData, success: true };
   } catch (error) {
     console.error('Error logging in:', error);
