@@ -175,45 +175,43 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-2xl mx-auto"
+        className="max-w-md mx-auto space-y-4"
       >
-        <Card>
-          <h1 className="text-2xl font-bold text-white mb-2">
+        {/* Header Card */}
+        <Card className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-1">
             Dashboard
           </h1>
-          <p className="text-white/50 mb-6">
+          <p className="text-white/50 text-sm">
             Manage your profile
           </p>
+        </Card>
 
-          {/* Profile Name */}
-          <div className="mb-6">
-            <label className="text-white/70 text-sm mb-2 block">Display Name</label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Your Name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSaveName}
-                variant="secondary"
-                disabled={loading}
-              >
-                Save
-              </Button>
-            </div>
+        {/* Name Card */}
+        <Card>
+          <label className="text-white/70 text-sm mb-2 block">Display Name</label>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Your Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={handleSaveName} variant="secondary" disabled={loading}>
+              Save
+            </Button>
           </div>
+        </Card>
 
-          <hr className="border-white/10 my-6" />
-
+        {/* Link Card */}
+        <Card>
           <h2 className="text-lg font-semibold text-white mb-4">Your Social Link</h2>
 
-          {/* Show single input when no link saved */}
+          {/* Show input when no link saved */}
           {!hasLinks && (
             <>
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3 mb-4">
                 <Input
                   type="text"
                   placeholder="Platform Name"
@@ -230,15 +228,13 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Quick Add Buttons */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                <p className="text-white/50 text-sm w-full mb-2">Quick Add:</p>
+              <div className="flex flex-wrap gap-2 mb-4">
                 {QUICK_LINKS.map((platform, pIndex) => (
                   <button
                     key={pIndex}
                     type="button"
                     onClick={() => addQuickLink(pIndex)}
-                    className="text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
+                    className="text-xs px-2 py-1 rounded bg-white/10 text-white/70 hover:bg-[#00ffaa]/20 hover:text-[#00ffaa] transition-colors"
                   >
                     + {platform.name}
                   </button>
@@ -247,68 +243,44 @@ const Dashboard = () => {
             </>
           )}
 
-          {/* Single Saved Link with Edit/Delete */}
+          {/* Saved Link */}
           {hasLinks && (
-            <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-3 mb-4">
+            <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 mb-4">
               <div className="flex-1 min-w-0">
                 <p className="text-white font-medium">{socialLink.name}</p>
                 <p className="text-white/50 text-xs truncate">{socialLink.url}</p>
               </div>
-              <div className="flex gap-2 ml-3">
+              <div className="flex gap-1 ml-2">
                 <button
                   onClick={handleEditLink}
-                  className="p-2 text-white/50 hover:text-[#00ffaa] transition-colors"
+                  className="p-1.5 text-white/50 hover:text-[#00ffaa] transition-colors"
                 >
-                  <Edit2 size={18} />
+                  <Edit2 size={16} />
                 </button>
                 <button
                   onClick={handleDeleteLink}
-                  className="p-2 text-white/50 hover:text-red-400 transition-colors"
+                  className="p-1.5 text-white/50 hover:text-red-400 transition-colors"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
           )}
 
-          <div className="flex gap-4">
-            <Button
-              onClick={handleSaveLinks}
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-            </Button>
-            <Button
-              onClick={handleClear}
-              variant="secondary"
-              disabled={loading}
-            >
-              Clear All
-            </Button>
-          </div>
-
-          {/* Saved Links with Edit/Delete Buttons - only show after saving */}
-          <SavedLinks 
-            links={socialLinks} 
-            onEdit={handleEditLink}
-            onDelete={handleDeleteLink}
-            visible={hasLinks}
-          />
+          <Button
+            onClick={handleSaveLinks}
+            disabled={loading || !socialLink.name || !socialLink.url}
+            className="w-full"
+          >
+            {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Link'}
+          </Button>
         </Card>
 
-        {/* User Info Card */}
-        <Card className="mt-4">
-          <h2 className="text-lg font-semibold text-white mb-2">Account Info</h2>
-          <p className="text-white/70">
-            <span className="text-white/50">Email:</span> {user.email}
-          </p>
-          <p className="text-[#00ffaa] font-mono">
-            <span className="text-white/50">ID:</span> {user.generatedID}
-          </p>
-          <p className="text-white/50 text-sm mt-2">
-            UID: {user.uid}
-          </p>
+        {/* Account Info */}
+        <Card>
+          <h3 className="text-white/70 text-sm mb-2">Account</h3>
+          <p className="text-white/50 text-xs">ID: {user?.generatedID || 'N/A'}</p>
+          <p className="text-white/50 text-xs">Email: {user?.email}</p>
         </Card>
       </motion.div>
     </div>

@@ -19,9 +19,6 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Debug log
-  console.log('ProtectedRoute - user:', user, 'loading:', loading);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -30,9 +27,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // If not authenticated, redirect to register
   if (!user) {
-    console.log('ProtectedRoute - redirecting to register, user is null');
     return <Navigate to="/register" state={{ from: location }} replace />;
   }
 
