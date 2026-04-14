@@ -159,11 +159,16 @@ const Dashboard = () => {
   };
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen pt-20 pb-8 px-4 flex flex-col items-center justify-center bg-black">
+        <Navbar />
+        <p className="text-white/50">Please login first</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4">
+    <div className="min-h-screen pt-20 pb-8 px-4 bg-black">
       <Navbar />
       
       <motion.div

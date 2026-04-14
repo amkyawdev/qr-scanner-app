@@ -9,8 +9,21 @@ const AuthContext = createContext(null);
  * AuthContext for managing Firebase authentication state
  */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    // Try to get user from localStorage on initial load
+    const saved = localStorage.getItem('smartqr_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Save user to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('smartqr_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('smartqr_user');
+    }
+  }, [user]);
 
   // Listen to Firebase Auth state changes
   useEffect(() => {
