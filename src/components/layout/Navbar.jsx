@@ -82,7 +82,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             className="md:hidden absolute top-full left-0 right-0 mt-2 p-4"
           >
-            <div className="glass-card rounded-xl overflow-hidden bg-black/90">
+            <div className="bg-black rounded-xl overflow-hidden border border-white/10">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (
