@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Phone } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -9,13 +9,14 @@ import { loginUser } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Login Page - User login with email and password
+ * Login Page - User login with email or phone
  */
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [credential, setCredential] = useState(''); // Email or Phone
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isPhone, setIsPhone] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -24,14 +25,15 @@ const Login = () => {
     e.preventDefault();
     setError('');
     
-    if (!email.trim() || !password) {
+    if (!credential.trim() || !password) {
       setError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
     
-    const result = await loginUser(email.trim(), password);
+    const identifier = credential.trim();
+    const result = await loginUser(identifier, password);
     
     if (result.success) {
       login(result);
@@ -41,6 +43,12 @@ const Login = () => {
     }
     
     setLoading(false);
+  };
+
+  // Toggle between email and phone
+  const handleToggleType = (type) => {
+    setIsPhone(type === 'phone');
+    setCredential('');
   };
 
   return (
@@ -59,14 +67,44 @@ const Login = () => {
             Welcome back! Login to continue
           </p>
 
+          {/* Toggle Email/Phone */}
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => handleToggleType('email')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm transition-colors ${
+                !isPhone 
+                  ? 'bg-[#00ffaa]/20 text-[#00ffaa] border border-[#00ffaa]/50' 
+                  : 'bg-white/5 text-white/50 border border-white/10'
+              }`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleType('phone')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm transition-colors ${
+                isPhone 
+                  ? 'bg-[#00ffaa]/20 text-[#00ffaa] border border-[#00ffaa]/50' 
+                  : 'bg-white/5 text-white/50 border border-white/10'
+              }`}
+            >
+              Mobile No
+            </button>
+          </div>
+
           <form onSubmit={handleLogin}>
             <div className="mb-4 relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              {isPhone ? (
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              ) : (
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              )}
               <Input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type={isPhone ? "tel" : "email"}
+                placeholder={isPhone ? "Mobile Number" : "Email Address"}
+                value={credential}
+                onChange={(e) => setCredential(e.target.value)}
                 disabled={loading}
                 className="pl-10"
               />

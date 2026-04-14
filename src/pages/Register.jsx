@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User, Phone } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -9,15 +9,16 @@ import { registerUser } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Register Page - User registration with email/password
+ * Register Page - User registration with email/phone
  */
 const Register = () => {
-  const [email, setEmail] = useState('');
+  const [credential, setCredential] = useState(''); // Email or Phone
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isPhone, setIsPhone] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const Register = () => {
     setError('');
     
     // Validation
-    if (!email.trim() || !password || !fullName.trim()) {
+    if (!credential.trim() || !password || !fullName.trim()) {
       setError('Please fill in all fields');
       return;
     }
@@ -44,7 +45,11 @@ const Register = () => {
 
     setLoading(true);
     
-    const result = await registerUser(email.trim(), password, fullName.trim());
+    // Determine if credential is phone or email
+    const isPhoneNumber = credential.replace(/[\s\-+()]/g, '').match(/^\d{8,15}$/);
+    const identifier = isPhoneNumber ? credential.trim() : credential.trim();
+    
+    const result = await registerUser(identifier, password, fullName.trim());
     
     if (result.success) {
       login(result);
@@ -54,6 +59,12 @@ const Register = () => {
     }
     
     setLoading(false);
+  };
+
+  // Toggle between email and phone
+  const handleToggleType = (type) => {
+    setIsPhone(type === 'phone');
+    setCredential('');
   };
 
   return (
@@ -72,6 +83,32 @@ const Register = () => {
             Create your account
           </p>
 
+          {/* Toggle Email/Phone */}
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => handleToggleType('email')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm transition-colors ${
+                !isPhone 
+                  ? 'bg-[#00ffaa]/20 text-[#00ffaa] border border-[#00ffaa]/50' 
+                  : 'bg-white/5 text-white/50 border border-white/10'
+              }`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleType('phone')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm transition-colors ${
+                isPhone 
+                  ? 'bg-[#00ffaa]/20 text-[#00ffaa] border border-[#00ffaa]/50' 
+                  : 'bg-white/5 text-white/50 border border-white/10'
+              }`}
+            >
+              Mobile No
+            </button>
+          </div>
+
           <form onSubmit={handleRegister}>
             <div className="mb-4 relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
@@ -86,12 +123,16 @@ const Register = () => {
             </div>
 
             <div className="mb-4 relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              {isPhone ? (
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              ) : (
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
+              )}
               <Input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type={isPhone ? "tel" : "email"}
+                placeholder={isPhone ? "Mobile Number (e.g., 09677740154)" : "Email Address"}
+                value={credential}
+                onChange={(e) => setCredential(e.target.value)}
                 disabled={loading}
                 className="pl-10"
               />
