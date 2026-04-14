@@ -5,23 +5,23 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Navbar from '../components/layout/Navbar';
 import { useAuth } from '../context/AuthContext';
-import { updateUserLinks, updateUserProfile } from '../services/firestore';
+import { updateUserSocialLinks, updateUserProfile, normalizeUrl } from '../services/firestore';
 
 /**
  * Dashboard Page - Link Management
- * Users can add/edit up to 10 links
+ * Users can add/edit up to 10 social links
  */
 const Dashboard = () => {
   const { user, updateUser } = useAuth();
-  const [links, setLinks] = useState(Array(10).fill({ name: '', url: '' }));
+  const [socialLinks, setSocialLinks] = useState(Array(10).fill({ name: '', url: '' }));
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
   // Initialize data from user
   useEffect(() => {
-    if (user?.links) {
-      setLinks([...user.links]);
+    if (user?.socialLinks) {
+      setSocialLinks([...user.socialLinks]);
     }
     if (user?.fullName) {
       setFullName(user.fullName);
@@ -29,19 +29,25 @@ const Dashboard = () => {
   }, [user]);
 
   const handleLinkChange = (index, field, value) => {
-    const newLinks = [...links];
+    const newLinks = [...socialLinks];
     newLinks[index] = { ...newLinks[index], [field]: value };
-    setLinks(newLinks);
+    setSocialLinks(newLinks);
     setSaved(false);
   };
 
   const handleSaveLinks = async () => {
     setLoading(true);
     
-    const result = await updateUserLinks(user.uid, links);
+    // Normalize URLs - add https:// if missing
+    const normalizedLinks = socialLinks.map(link => ({
+      ...link,
+      url: normalizeUrl(link.url)
+    }));
+    
+    const result = await updateUserSocialLinks(user.uid, normalizedLinks);
     
     if (result.success) {
-      updateUser({ links });
+      updateUser({ socialLinks: normalizedLinks });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
@@ -64,7 +70,7 @@ const Dashboard = () => {
   };
 
   const handleClear = () => {
-    setLinks(Array(10).fill({ name: '', url: '' }));
+    setSocialLinks(Array(10).fill({ name: '', url: '' }));
     setSaved(false);
   };
 
@@ -113,10 +119,11 @@ const Dashboard = () => {
 
           <hr className="border-white/10 my-6" />
 
-          <h2 className="text-lg font-semibold text-white mb-4">Your Links (max 10)</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Your Social Links (max 10)</h2>
+          <p className="text-white/50 text-sm mb-4">Auto-adds https:// if missing</p>
 
           <div className="space-y-4 mb-6">
-            {links.map((link, index) => (
+            {socialLinks.map((link, index) => (
               <div key={index} className="flex gap-2 items-center">
                 <span className="text-white/30 text-sm w-6">{index + 1}.</span>
                 <Input
@@ -128,7 +135,7 @@ const Dashboard = () => {
                 />
                 <Input
                   type="url"
-                  placeholder="URL (e.g., https://facebook.com)"
+                  placeholder="URL (e.g., facebook.com/yourpage)"
                   value={link.url}
                   onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
                   className="flex-1"
@@ -160,6 +167,9 @@ const Dashboard = () => {
           <h2 className="text-lg font-semibold text-white mb-2">Account Info</h2>
           <p className="text-white/70">
             <span className="text-white/50">Email:</span> {user.email}
+          </p>
+          <p className="text-[#00ffaa] font-mono">
+            <span className="text-white/50">ID:</span> {user.generatedID}
           </p>
           <p className="text-white/50 text-sm mt-2">
             UID: {user.uid}

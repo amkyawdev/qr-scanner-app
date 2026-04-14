@@ -14,10 +14,10 @@ const Index = () => {
   const [profileUrl, setProfileUrl] = useState('');
 
   useEffect(() => {
-    // Generate profile URL based on user UID
-    if (user?.uid) {
+    // Generate profile URL based on generatedID
+    if (user?.generatedID) {
       const baseUrl = window.location.origin;
-      setProfileUrl(`${baseUrl}/profile/${user.uid}`);
+      setProfileUrl(`${baseUrl}/profile/${user.generatedID}`);
     }
   }, [user]);
 
@@ -41,11 +41,11 @@ const Index = () => {
               {user.fullName || 'User'}
             </h1>
             <p className="text-[#00ffaa] font-mono text-lg mb-6 neon-text">
-              {user.email}
+              {user.generatedID}
             </p>
             
             <div className="flex justify-center mb-6">
-              <QRGenerator value={profileUrl || user.uid} size={200} />
+              <QRGenerator value={profileUrl || user.generatedID} size={200} />
             </div>
             
             <p className="text-white/50 text-sm">
@@ -54,12 +54,12 @@ const Index = () => {
           </div>
         </Card>
 
-        {/* User Links Preview */}
-        {user.links && user.links.some(link => link.url) && (
+        {/* User Social Links Preview */}
+        {user.socialLinks && user.socialLinks.some(link => link.url) && (
           <Card className="mt-4">
             <h2 className="text-lg font-semibold text-white mb-4">Your Links</h2>
             <div className="space-y-2">
-              {user.links.filter(link => link.url).slice(0, 5).map((link, index) => (
+              {user.socialLinks.filter(link => link.url).slice(0, 5).map((link, index) => (
                 <a
                   key={index}
                   href={link.url}

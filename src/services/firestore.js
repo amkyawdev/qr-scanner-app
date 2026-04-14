@@ -22,6 +22,84 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /**
+ * Generate a unique user ID based on name and random digits
+ * Format: Name Prefix + 3 Random Digits + @wx
+ * @param {string} name - User's full name
+ * @returns {string} Generated unique ID
+ */
+export const generateUserId = (name) => {
+  const prefix = name.slice(0, 3).toLowerCase().replace(/[^a-z]/g, 'xyz');
+  const randomDigits = Math.floor(100 + Math.random() * 900).toString();
+  return `${prefix}${randomDigits}@wx`;
+};
+
+/**
+ * Normalize URL - add https:// if missing
+ * @param {string} url - URL to normalize
+ * @returns {string} Normalized URL
+ */
+export const normalizeUrl = (url) => {
+  if (!url) return '';
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
+/**
+ * Detect platform from URL and return icon name
+ * @param {string} url - URL to detect
+ * @returns {string} Platform icon name
+ */
+export const detectPlatform = (url) => {
+  if (!url) return 'Link';
+  
+  const lowerUrl = url.toLowerCase();
+  
+  if (lowerUrl.includes('facebook') || lowerUrl.includes('fb.com') || lowerUrl.includes('m.facebook')) {
+    return 'Facebook';
+  }
+  if (lowerUrl.includes('instagram') || lowerUrl.includes('ig.me')) {
+    return 'Instagram';
+  }
+  if (lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) {
+    return 'Twitter';
+  }
+  if (lowerUrl.includes('tiktok')) {
+    return 'Video'; // TikTok icon
+  }
+  if (lowerUrl.includes('youtube') || lowerUrl.includes('youtu.be')) {
+    return 'Youtube';
+  }
+  if (lowerUrl.includes('linkedin')) {
+    return 'Linkedin';
+  }
+  if (lowerUrl.includes('github')) {
+    return 'Github';
+  }
+  if (lowerUrl.includes('telegram') || lowerUrl.includes('t.me')) {
+    return 'Send'; // Telegram icon
+  }
+  if (lowerUrl.includes('whatsapp') || lowerUrl.includes('wa.me')) {
+    return 'MessageCircle'; // WhatsApp icon
+  }
+  if (lowerUrl.includes('discord')) {
+    return 'MessageSquare'; // Discord icon
+  }
+  if (lowerUrl.includes('email') || lowerUrl.includes('gmail') || lowerUrl.includes('mail.google')) {
+    return 'Mail';
+  }
+  if (lowerUrl.includes('phone') || lowerUrl.includes('call')) {
+    return 'Phone';
+  }
+  if (lowerUrl.includes('location') || lowerUrl.includes('maps')) {
+    return 'MapPin';
+  }
+  
+  return 'Link';
+};
+
+/**
  * Register a new user with email/password
  * Also creates a user profile in Firestore
  */
@@ -31,6 +109,9 @@ export const registerUser = async (email, password, fullName) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
+    // Generate unique ID
+    const generatedID = generateUserId(fullName);
+    
     // Update display name
     await updateProfile(user, { displayName: fullName });
 
@@ -39,7 +120,8 @@ export const registerUser = async (email, password, fullName) => {
       uid: user.uid,
       email,
       fullName,
-      links: Array(10).fill({ name: '', url: '' }),
+      generatedID,
+      socialLinks: Array(10).fill({ name: '', url: '' }),
       createdAt: new Date().toISOString()
     };
 
@@ -69,12 +151,14 @@ export const loginUser = async (email, password) => {
       return { ...docSnap.data(), success: true };
     }
 
-    // If no profile exists, create basic profile
+    // If no profile exists, create basic profile with generatedID
+    const generatedID = generateUserId(user.displayName || 'user');
     const userData = {
       uid: user.uid,
       email: user.email,
       fullName: user.displayName || 'User',
-      links: Array(10).fill({ name: '', url: '' }),
+      generatedID,
+      socialLinks: Array(10).fill({ name: '', url: '' }),
       createdAt: new Date().toISOString()
     };
 
@@ -145,17 +229,24 @@ export const getUserProfile = async (uid) => {
 };
 
 /**
- * Update user links
+ * Update user social links
  */
-export const updateUserLinks = async (uid, links) => {
+export const updateUserSocialLinks = async (uid, socialLinks) => {
   try {
     const userDoc = doc(db, 'users', uid);
-    await updateDoc(userDoc, { links, updatedAt: new Date().toISOString() });
+    await updateDoc(userDoc, { socialLinks, updatedAt: new Date().toISOString() });
     return { success: true };
   } catch (error) {
     console.error('Error updating links:', error);
     return { success: false, error: error.message };
   }
+};
+
+/**
+ * Update user links (alias for backward compatibility)
+ */
+export const updateUserLinks = async (uid, links) => {
+  return updateUserSocialLinks(uid, links);
 };
 
 /**
